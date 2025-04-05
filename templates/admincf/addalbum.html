@@ -1,0 +1,116 @@
+{% extends 'admincf/index.html' %}
+
+{% block title %}Add Album{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-lg shadow-lg">
+    <!-- Display Messages -->
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="px-4 py-2 rounded-md {% if message.tags == 'error' %}bg-red-500{% elif message.tags == 'warning' %}bg-yellow-500{% else %}bg-green-500{% endif %} text-white">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <h2 class="text-3xl font-bold mb-6 text-purple-400">Add Album</h2>
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div>
+            <label for="album_name" class="block text-sm font-medium text-gray-300">Album Name</label>
+            <input type="text" name="album_name" id="album_name" class="mt-1 block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-purple-500 focus:border-purple-500" required>
+        </div>
+        <div>
+            <label for="artist" class="block text-sm font-medium text-gray-300">Artist</label>
+            <input type="text" name="artist" id="artist" class="mt-1 block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-purple-500 focus:border-purple-500" required>
+        </div>
+        <div>
+            <label for="album_language" class="block text-sm font-medium text-gray-300">Album Language</label>
+            <select name="album_language" id="album_language" class="mt-1 block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-purple-500 focus:border-purple-500" required>
+                <option value="" disabled selected>Select Language</option>
+                {% for key, value in album_languages.items %}
+                <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="album_image" class="block text-sm font-medium text-gray-300">Album Image</label>
+            <input type="file" name="album_image" id="album_image" class="mt-1 block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-purple-500 focus:border-purple-500" accept="image/*" required>
+        </div>
+        <div>
+            <label for="music_tracks" class="block text-sm font-medium text-gray-300">Select Music Tracks</label>
+            <div class="relative">
+                <input type="text" id="search_tracks" placeholder="Search music tracks..." class="mt-1 block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-purple-500 focus:border-purple-500">
+                <div id="music_tracks_dropdown" class="absolute z-10 w-full mt-2 bg-gray-700 border border-gray-600 rounded-md max-h-60 overflow-y-auto hidden">
+                    {% for music in music_tracks %}
+                        <div class="px-4 py-2 hover:bg-gray-600 cursor-pointer" data-value="{{ music.music_id }}">
+                            {{ music.title }} by {{ music.artist }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div id="selected_tracks" class="mt-2"></div>
+            <input type="hidden" name="music_tracks" id="music_tracks">
+        </div>
+        <div>
+            <button type="submit" class="w-full px-4 py-2 bg-purple-600 text-white font-semibold rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                Add Album
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search_tracks');
+        const dropdown = document.getElementById('music_tracks_dropdown');
+        const selectedTracks = document.getElementById('selected_tracks');
+        const hiddenInput = document.getElementById('music_tracks');
+
+        let selectedTrackIds = [];
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const tracks = dropdown.querySelectorAll('div');
+
+            tracks.forEach(track => {
+                const text = track.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    track.style.display = 'block';
+                } else {
+                    track.style.display = 'none';
+                }
+            });
+
+            dropdown.style.display = 'block';
+        });
+
+        dropdown.addEventListener('click', function(e) {
+            if (e.target && e.target.nodeName === 'DIV') {
+                const trackId = e.target.getAttribute('data-value');
+                const trackText = e.target.textContent;
+
+                if (!selectedTrackIds.includes(trackId)) {
+                    selectedTrackIds.push(trackId);
+                    const selectedTrack = document.createElement('div');
+                    selectedTrack.className = 'px-4 py-2 bg-gray-600 rounded-md mt-2';
+                    selectedTrack.textContent = trackText;
+                    selectedTracks.appendChild(selectedTrack);
+                }
+
+                hiddenInput.value = selectedTrackIds.join(',');
+                dropdown.style.display = 'none';
+                searchInput.value = '';
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target) && e.target !== searchInput) {
+                dropdown.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends 'user/index.html' %}
+
+{% block title %}View Album{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-purple-400 mb-8">Albums</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for album in albums %}
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105 relative group">
+            <!-- Album Image -->
+            <img src="{{ album.album_image.url }}" alt="{{ album.album_name }}" class="w-full h-48 object-cover">
+
+            <!-- Play Icon Overlay -->
+            <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button onclick="openAlbumModal('{{ album.album_name }}', '{{ album.artist }}', '{{ album.album_image.url }}', '{{ album.track_list_json }}')" class="text-white hover:text-purple-400 transition-colors duration-300">
+                    <i class="fas fa-play-circle text-6xl"></i>
+                </button>
+            </div>
+
+            <!-- Album Details -->
+            <div class="p-4">
+                <h2 class="text-xl font-semibold text-white">{{ album.album_name }}</h2>
+                <p class="text-gray-400">{{ album.artist }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Album Modal -->
+<!-- Album Modal -->
+<div id="albumModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-75 backdrop-blur-md pt-16"> <!-- Added pt-16 for padding-top -->
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 p-6 max-h-[80vh] overflow-y-auto"> <!-- Reduced height and added overflow -->
+            <!-- Album Image -->
+            <img id="modalAlbumImage" src="" alt="Album Image" class="w-full h-32 object-cover rounded-lg mb-4"> <!-- Reduced image height -->
+
+            <!-- Album Title and Artist -->
+            <h2 id="modalAlbumTitle" class="text-2xl font-bold text-purple-400 mb-2"></h2>
+            <p id="modalAlbumArtist" class="text-gray-400 mb-4"></p> <!-- Reduced margin -->
+
+            <!-- Track List -->
+            <div id="trackList" class="mb-4 max-h-32 overflow-y-auto"> <!-- Reduced max height -->
+                <!-- Tracks will be dynamically added here -->
+            </div>
+
+            <!-- Music Player -->
+            <div class="bg-gray-700 rounded-lg p-4">
+                <!-- Progress Bar -->
+                <div class="relative mb-4">
+                    <div class="w-full h-2 bg-gray-600 rounded-lg overflow-hidden">
+                        <div id="progressFill" class="h-full bg-purple-500 rounded-lg" style="width: 0%;"></div>
+                    </div>
+                    <input type="range" id="progressBar" class="absolute top-0 left-0 w-full h-2 opacity-0 cursor-pointer" value="0" min="0">
+                </div>
+
+                <!-- Time Display -->
+                <div class="flex justify-between text-gray-400 text-sm mb-4"> <!-- Reduced margin -->
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex justify-center space-x-6 mb-4"> <!-- Reduced margin -->
+                    <button onclick="skipBackward()" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-backward text-2xl"></i>
+                    </button>
+                    <button onclick="togglePlay()" id="playPauseBtn" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-play text-3xl"></i>
+                    </button>
+                    <button onclick="skipForward()" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-forward text-2xl"></i>
+                    </button>
+                </div>
+
+                <!-- Volume Control -->
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleMute()" id="muteBtn" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-volume-up text-xl"></i>
+                    </button>
+                    <input type="range" id="volumeControl" class="w-24 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer" min="0" max="1" step="0.01" value="1">
+                </div>
+            </div>
+
+            <!-- Close Button -->
+            <button onclick="closeAlbumModal()" class="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors duration-300"> <!-- Reduced margin -->
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for Icons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+<script>
+    let audioPlayer;
+    let isPlaying = false;
+    let isMuted = false;
+    let currentTrackIndex = 0;
+    let tracks = [];
+
+    function openAlbumModal(albumName, artist, albumImage, trackListJson) {
+        const modal = document.getElementById('albumModal');
+        const modalAlbumTitle = document.getElementById('modalAlbumTitle');
+        const modalAlbumArtist = document.getElementById('modalAlbumArtist');
+        const modalAlbumImage = document.getElementById('modalAlbumImage');
+        const trackList = document.getElementById('trackList');
+
+        // Set album details
+        modalAlbumTitle.textContent = albumName;
+        modalAlbumArtist.textContent = artist;
+        modalAlbumImage.src = albumImage;
+
+        // Parse and display tracks
+        tracks = JSON.parse(trackListJson);
+        trackList.innerHTML = tracks.map((track, index) => `
+            <div class="flex items-center justify-between p-2 hover:bg-gray-700 rounded-lg cursor-pointer" onclick="playTrack(${index})">
+                <span class="text-white">${track.title}</span>
+                <span class="text-gray-400">${track.artist}</span>
+            </div>
+        `).join('');
+
+        // Show modal
+        modal.classList.remove('hidden');
+        playTrack(0); // Automatically play the first track
+    }
+
+    function closeAlbumModal() {
+        const modal = document.getElementById('albumModal');
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer.src = '';
+        }
+        modal.classList.add('hidden');
+    }
+
+    function playTrack(index) {
+        currentTrackIndex = index;
+        const track = tracks[index];
+        if (!audioPlayer) {
+            audioPlayer = new Audio(track.music_file);
+        } else {
+            audioPlayer.src = track.music_file;
+            audioPlayer.play();
+        }
+        audioPlayer.addEventListener('timeupdate', updateProgressBar);
+        audioPlayer.addEventListener('loadedmetadata', updateDuration);
+        audioPlayer.addEventListener('ended', playNextTrack);
+        isPlaying = true;
+        document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause text-3xl"></i>';
+    }
+
+    function playNextTrack() {
+        currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+        playTrack(currentTrackIndex);
+    }
+
+    function togglePlay() {
+        if (isPlaying) {
+            audioPlayer.pause();
+            document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play text-3xl"></i>';
+        } else {
+            audioPlayer.play();
+            document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause text-3xl"></i>';
+        }
+        isPlaying = !isPlaying;
+    }
+
+    function skipForward() {
+        audioPlayer.currentTime += 10; // Skip forward by 10 seconds
+    }
+
+    function skipBackward() {
+        audioPlayer.currentTime -= 10; // Skip backward by 10 seconds
+    }
+
+    function updateProgressBar() {
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const currentTime = document.getElementById('currentTime');
+
+        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressBar.value = progress;
+        progressFill.style.width = `${progress}%`;
+
+        // Update current time display
+        const minutes = Math.floor(audioPlayer.currentTime / 60);
+        const seconds = Math.floor(audioPlayer.currentTime % 60);
+        currentTime.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    function updateDuration() {
+        const duration = document.getElementById('duration');
+        const minutes = Math.floor(audioPlayer.duration / 60);
+        const seconds = Math.floor(audioPlayer.duration % 60);
+        duration.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    function toggleMute() {
+        if (isMuted) {
+            audioPlayer.muted = false;
+            document.getElementById('muteBtn').innerHTML = '<i class="fas fa-volume-up text-xl"></i>';
+        } else {
+            audioPlayer.muted = true;
+            document.getElementById('muteBtn').innerHTML = '<i class="fas fa-volume-mute text-xl"></i>';
+        }
+        isMuted = !isMuted;
+    }
+
+    document.getElementById('progressBar').addEventListener('input', (e) => {
+        const seekTime = (e.target.value / 100) * audioPlayer.duration;
+        audioPlayer.currentTime = seekTime;
+    });
+
+    document.getElementById('volumeControl').addEventListener('input', (e) => {
+        audioPlayer.volume = e.target.value;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends 'user/index.html' %}
+
+{% block title %}View Playlist{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-purple-400 mb-8">Playlists</h1>
+    
+    <!-- Button to Open Create Playlist Modal -->
+    <button onclick="openCreatePlaylistModal()" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors duration-300 mb-8">
+        <i class="fas fa-plus mr-2"></i>Create New Playlist
+    </button>
+
+    <!-- Display Existing Playlists -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for playlist in playlists %}
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105 relative group">
+            <!-- Playlist Image (Optional) -->
+            <div class="w-full h-48 bg-purple-500 flex items-center justify-center">
+                <i class="fas fa-music text-6xl text-white"></i>
+            </div>
+
+            <!-- Play Icon Overlay -->
+            <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button onclick="openPlaylistModal('{{ playlist.playlist_id }}')" class="text-white hover:text-purple-400 transition-colors duration-300">
+                    <i class="fas fa-play-circle text-6xl"></i>
+                </button>
+            </div>
+
+            <!-- Playlist Details -->
+            <div class="p-4">
+                <h2 class="text-xl font-semibold text-white">{{ playlist.playlist_name }}</h2>
+                <p class="text-gray-400">{{ playlist.music_tracks.count }} Tracks</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Create Playlist Modal -->
+<div id="createPlaylistModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-75 backdrop-blur-md pt-16">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 p-6 max-h-[80vh] overflow-y-auto transform transition-transform duration-300 scale-95 hover:scale-100">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-purple-400">Create New Playlist</h2>
+                <button onclick="closeCreatePlaylistModal()" class="text-gray-400 hover:text-white transition-colors duration-300">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Create Playlist Form -->
+            <form action="{% url 'create_playlist' %}" method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="playlist_name" class="block text-white mb-2">Playlist Name</label>
+                    <input type="text" id="playlist_name" name="playlist_name" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-white mb-2">Search and Select Tracks</label>
+                    <!-- Search Input -->
+                    <input type="text" id="searchTracks" placeholder="Search tracks..." class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4">
+                    <!-- Track List -->
+                    <div id="trackList" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-48 overflow-y-auto">
+                        {% for track in music_tracks %}
+                        <div class="flex items-center bg-gray-700 p-2 rounded-lg hover:bg-gray-600 transition-colors duration-300">
+                            <input type="checkbox" id="track_{{ track.music_id }}" name="tracks" value="{{ track.music_id }}" class="mr-2">
+                            <label for="track_{{ track.music_id }}" class="text-white">{{ track.title }} - {{ track.artist }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors duration-300">
+                    Create Playlist
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Playlist Modal -->
+<div id="playlistModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-75 backdrop-blur-md pt-16">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 p-6 max-h-[80vh] overflow-y-auto">
+            <!-- Playlist Title -->
+            <h2 id="modalPlaylistTitle" class="text-2xl font-bold text-purple-400 mb-4"></h2>
+
+            <!-- Track List -->
+            <div id="playlistTrackList" class="mb-4 max-h-32 overflow-y-auto">
+                <!-- Tracks will be dynamically added here -->
+            </div>
+
+            <!-- Music Player -->
+            <div class="bg-gray-700 rounded-lg p-4">
+                <!-- Progress Bar -->
+                <div class="relative mb-4">
+                    <div class="w-full h-2 bg-gray-600 rounded-lg overflow-hidden">
+                        <div id="progressFill" class="h-full bg-purple-500 rounded-lg" style="width: 0%;"></div>
+                    </div>
+                    <input type="range" id="progressBar" class="absolute top-0 left-0 w-full h-2 opacity-0 cursor-pointer" value="0" min="0">
+                </div>
+
+                <!-- Time Display -->
+                <div class="flex justify-between text-gray-400 text-sm mb-4">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex justify-center space-x-6 mb-4">
+                    <button onclick="skipBackward()" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-backward text-2xl"></i>
+                    </button>
+                    <button onclick="togglePlay()" id="playPauseBtn" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-play text-3xl"></i>
+                    </button>
+                    <button onclick="skipForward()" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-forward text-2xl"></i>
+                    </button>
+                </div>
+
+                <!-- Volume Control -->
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleMute()" id="muteBtn" class="text-white hover:text-purple-400 transition-colors duration-300">
+                        <i class="fas fa-volume-up text-xl"></i>
+                    </button>
+                    <input type="range" id="volumeControl" class="w-24 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer" min="0" max="1" step="0.01" value="1">
+                </div>
+            </div>
+
+            <!-- Close Button -->
+            <button onclick="closePlaylistModal()" class="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors duration-300">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for Icons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+<script>
+    // Environment Variables
+    const BASE_URL = "{{ base_url }}"; // Set this in your Django context or environment
+
+    // Modal Functions
+    function openCreatePlaylistModal() {
+        const modal = document.getElementById('createPlaylistModal');
+        modal.classList.remove('hidden');
+    }
+
+    function closeCreatePlaylistModal() {
+        const modal = document.getElementById('createPlaylistModal');
+        modal.classList.add('hidden');
+    }
+
+    function openPlaylistModal(playlistId) {
+        fetch(`${BASE_URL}/user/get_playlist_tracks/${playlistId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const modal = document.getElementById('playlistModal');
+                const modalPlaylistTitle = document.getElementById('modalPlaylistTitle');
+                const playlistTrackList = document.getElementById('playlistTrackList');
+
+                // Set playlist details
+                modalPlaylistTitle.textContent = data.playlist_name;
+
+                // Parse and display tracks
+                tracks = data.tracks;
+                playlistTrackList.innerHTML = tracks.map((track, index) => `
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-700 rounded-lg cursor-pointer" onclick="playTrack(${index})">
+                        <span class="text-white">${track.title}</span>
+                        <span class="text-gray-400">${track.artist}</span>
+                    </div>
+                `).join('');
+
+                // Show modal
+                modal.classList.remove('hidden');
+                playTrack(0); // Automatically play the first track
+            })
+            .catch(error => console.error('Error fetching playlist tracks:', error));
+    }
+
+    function closePlaylistModal() {
+        const modal = document.getElementById('playlistModal');
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer.src = '';
+        }
+        modal.classList.add('hidden');
+    }
+
+    // Search Functionality
+    const searchTracksInput = document.getElementById('searchTracks');
+    const trackList = document.getElementById('trackList');
+
+    searchTracksInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const tracks = trackList.querySelectorAll('div');
+
+        tracks.forEach(track => {
+            const label = track.querySelector('label').textContent.toLowerCase();
+            if (label.includes(searchTerm)) {
+                track.style.display = 'flex';
+            } else {
+                track.style.display = 'none';
+            }
+        });
+    });
+
+    // Music Player Functions
+    let audioPlayer;
+    let isPlaying = false;
+    let isMuted = false;
+    let currentTrackIndex = 0;
+    let tracks = [];
+
+    function playTrack(index) {
+        currentTrackIndex = index;
+        const track = tracks[index];
+        if (!audioPlayer) {
+            audioPlayer = new Audio(`${BASE_URL}/media/${track.music_file}`);
+        } else {
+            audioPlayer.src = `${BASE_URL}/media/${track.music_file}`;
+            audioPlayer.play();
+        }
+        audioPlayer.addEventListener('timeupdate', updateProgressBar);
+        audioPlayer.addEventListener('loadedmetadata', updateDuration);
+        audioPlayer.addEventListener('ended', playNextTrack);
+        isPlaying = true;
+        document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause text-3xl"></i>';
+    }
+
+    function playNextTrack() {
+        currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+        playTrack(currentTrackIndex);
+    }
+
+    function togglePlay() {
+        if (isPlaying) {
+            audioPlayer.pause();
+            document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play text-3xl"></i>';
+        } else {
+            audioPlayer.play();
+            document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause text-3xl"></i>';
+        }
+        isPlaying = !isPlaying;
+    }
+
+    function skipForward() {
+        audioPlayer.currentTime += 10; // Skip forward by 10 seconds
+    }
+
+    function skipBackward() {
+        audioPlayer.currentTime -= 10; // Skip backward by 10 seconds
+    }
+
+    function updateProgressBar() {
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const currentTime = document.getElementById('currentTime');
+
+        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressBar.value = progress;
+        progressFill.style.width = `${progress}%`;
+
+        // Update current time display
+        const minutes = Math.floor(audioPlayer.currentTime / 60);
+        const seconds = Math.floor(audioPlayer.currentTime % 60);
+        currentTime.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    function updateDuration() {
+        const duration = document.getElementById('duration');
+        const minutes = Math.floor(audioPlayer.duration / 60);
+        const seconds = Math.floor(audioPlayer.duration % 60);
+        duration.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    function toggleMute() {
+        if (isMuted) {
+            audioPlayer.muted = false;
+            document.getElementById('muteBtn').innerHTML = '<i class="fas fa-volume-up text-xl"></i>';
+        } else {
+            audioPlayer.muted = true;
+            document.getElementById('muteBtn').innerHTML = '<i class="fas fa-volume-mute text-xl"></i>';
+        }
+        isMuted = !isMuted;
+    }
+
+    document.getElementById('progressBar').addEventListener('input', (e) => {
+        const seekTime = (e.target.value / 100) * audioPlayer.duration;
+        audioPlayer.currentTime = seekTime;
+    });
+
+    document.getElementById('volumeControl').addEventListener('input', (e) => {
+        audioPlayer.volume = e.target.value;
+    });
+</script>
+{% endblock %}

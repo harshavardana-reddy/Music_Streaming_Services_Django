@@ -1,0 +1,234 @@
+{% extends 'admincf/index.html' %}
+
+{% block title %}View Music{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-8 text-purple-400">View Music</h2>
+
+    <!-- Music Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for music in music_list %}
+        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105">
+            <!-- Music Image -->
+            <div class="relative h-48 overflow-hidden">
+                <img src="{{ music.music_image.url }}" alt="{{ music.title }}" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <!-- Play Button -->
+                    <button onclick="openModal('{{ music.music_file.url }}', '{{ music.title }}', '{{ music.artist }}')" class="p-3 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Music Details -->
+            <div class="p-4">
+                <h3 class="text-xl font-semibold text-white">{{ music.title }}</h3>
+                <p class="text-gray-400 mt-2">{{ music.artist }}</p>
+                <p class="text-gray-400 text-sm">{{ music.album }}</p>
+                <div class="flex justify-between items-center mt-4">
+                    <span class="text-purple-400 text-sm">{{ music.duration }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal for Music Player -->
+<div id="musicModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-lg shadow-lg w-full max-w-2xl overflow-hidden relative">
+        <!-- Close Button -->
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <!-- Track Info -->
+        <div class="p-6 border-b border-gray-700">
+            <h2 id="modalTitle" class="text-2xl font-bold text-white"></h2>
+            <p id="modalArtist" class="text-gray-400 mt-2"></p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="p-6">
+            <div class="w-full bg-gray-700 rounded-full h-2 cursor-pointer" onclick="seekAudio(event)">
+                <div id="progressBar" class="bg-purple-600 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-sm text-gray-400 mt-2">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="p-6 flex justify-center items-center space-x-6">
+            <!-- Previous Button -->
+            <button onclick="previousTrack()" class="text-gray-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+            </button>
+
+            <!-- Play/Pause Button -->
+            <button onclick="togglePlayPause()" class="p-3 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors">
+                <svg id="playIcon" class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                </svg>
+                <svg id="pauseIcon" class="w-8 h-8 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m-9-6h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z"></path>
+                </svg>
+            </button>
+
+            <!-- Next Button -->
+            <button onclick="nextTrack()" class="text-gray-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Volume Control -->
+        <div class="p-6 flex items-center space-x-4">
+            <button onclick="toggleMute()" class="text-gray-400 hover:text-white">
+                <svg id="volumeOnIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                </svg>
+                <svg id="volumeOffIcon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+                </svg>
+            </button>
+            <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" class="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer">
+        </div>
+
+        <!-- Hidden Audio Player -->
+        <audio id="audioPlayer" class="hidden"></audio>
+    </div>
+</div>
+
+<!-- JavaScript for Music Player -->
+<script>
+    let currentTrackIndex = 0;
+    const musicList = [
+        {% for music in music_list %}
+        {
+            title: "{{ music.title }}",
+            artist: "{{ music.artist }}",
+            file: "{{ music.music_file.url }}"
+        },
+        {% endfor %}
+    ];
+
+    const audioPlayer = document.getElementById('audioPlayer');
+    const progressBar = document.getElementById('progressBar');
+    const currentTime = document.getElementById('currentTime');
+    const duration = document.getElementById('duration');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeOnIcon = document.getElementById('volumeOnIcon');
+    const volumeOffIcon = document.getElementById('volumeOffIcon');
+    const modal = document.getElementById('musicModal');
+
+    // Open Modal and Load Track
+    function openModal(file, title, artist) {
+        const modalTitle = document.getElementById('modalTitle');
+        const modalArtist = document.getElementById('modalArtist');
+
+        // Set Track Info
+        modalTitle.textContent = title;
+        modalArtist.textContent = artist;
+
+        // Load and Play Track
+        audioPlayer.src = file;
+        audioPlayer.play();
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+
+        // Show Modal
+        modal.classList.remove('hidden');
+    }
+
+    // Close Modal
+    function closeModal() {
+        audioPlayer.pause();
+        modal.classList.add('hidden');
+    }
+
+    // Toggle Play/Pause
+    function togglePlayPause() {
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+        } else {
+            audioPlayer.pause();
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+        }
+    }
+
+    // Update Progress Bar
+    audioPlayer.addEventListener('timeupdate', () => {
+        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressBar.style.width = `${progress}%`;
+        currentTime.textContent = formatTime(audioPlayer.currentTime);
+    });
+
+    // Seek Audio
+    function seekAudio(event) {
+        const progressContainer = event.currentTarget;
+        const clickPosition = event.offsetX;
+        const progressWidth = progressContainer.clientWidth;
+        const seekTime = (clickPosition / progressWidth) * audioPlayer.duration;
+        audioPlayer.currentTime = seekTime;
+    }
+
+    // Update Duration
+    audioPlayer.addEventListener('loadedmetadata', () => {
+        duration.textContent = formatTime(audioPlayer.duration);
+    });
+
+    // Format Time (MM:SS)
+    function formatTime(time) {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Volume Control
+    volumeSlider.addEventListener('input', () => {
+        audioPlayer.volume = volumeSlider.value;
+    });
+
+    // Toggle Mute
+    function toggleMute() {
+        audioPlayer.muted = !audioPlayer.muted;
+        volumeOnIcon.classList.toggle('hidden');
+        volumeOffIcon.classList.toggle('hidden');
+    }
+
+    // Previous Track
+    function previousTrack() {
+        currentTrackIndex = (currentTrackIndex - 1 + musicList.length) % musicList.length;
+        loadTrack(currentTrackIndex);
+    }
+
+    // Next Track
+    function nextTrack() {
+        currentTrackIndex = (currentTrackIndex + 1) % musicList.length;
+        loadTrack(currentTrackIndex);
+    }
+
+    // Load Track
+    function loadTrack(index) {
+        const track = musicList[index];
+        openModal(track.file, track.title, track.artist);
+    }
+</script>
+{% endblock %}

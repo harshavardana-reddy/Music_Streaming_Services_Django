@@ -1,0 +1,215 @@
+{% extends 'admincf/index.html' %}
+
+{% block title %}Edit Album{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-8">
+  <!-- Go Back Button -->
+  <div class="mb-8">
+    <a
+      href="{% url 'viewalbum' %}" 
+      class="px-4 py-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-md hover:from-gray-700 hover:to-gray-800 transition-all"
+    >
+      Go Back
+    </a>
+  </div>
+
+  <h2 class="text-3xl font-bold mb-8 text-purple-400">
+    Edit Album: {{ album.album_name }}
+  </h2>
+
+  <!-- Album Details -->
+  <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+    <h3 class="text-xl font-semibold text-white">{{ album.album_name }}</h3>
+    <p class="text-gray-400">{{ album.artist }} - {{ album.album_language }}</p>
+  </div>
+
+  <!-- Add Track Form -->
+  <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 max-w-md mx-auto">
+    <h4 class="text-lg font-semibold text-white mb-4">Add Track to Album</h4>
+    <form method="post" class="space-y-4" action="{% url 'edit_album' album.album_id %}">
+      {% csrf_token %}
+      <div class="relative">
+        <input
+          type="text"
+          id="search-tracks"
+          placeholder="Search tracks..."
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-purple-500 focus:border-purple-500"
+        />
+        <div
+          id="tracks-dropdown"
+          class="absolute z-10 w-full mt-2 bg-gray-700 border border-gray-600 rounded-md max-h-60 overflow-y-auto hidden"
+        >
+          {% for track in all_tracks %}
+          <div
+            class="px-4 py-2 hover:bg-gray-600 cursor-pointer"
+            data-value="{{ track.music_id }}"
+          >
+            {{ track.title }} by {{ track.artist }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <!-- Hidden input for selected track IDs -->
+      <input
+        type="hidden"
+        id="selected-track-ids"
+        name="track_ids"
+        value=""
+      />
+      <!-- Display selected tracks -->
+      <div id="selected-tracks" class="space-y-2"></div>
+      <div id="no-track-selected" class="text-red-500 text-sm hidden">
+        No tracks selected. Please select at least one track to add.
+      </div>
+      <button
+        type="submit"
+        name="add_track"
+        class="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md hover:from-purple-700 hover:to-indigo-700 transition-all"
+        onclick="return validateTrackSelection()"
+      >
+        Add Selected Tracks
+      </button>
+    </form>
+  </div>
+
+  <!-- Tracks in Album -->
+  <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+    <h4 class="text-lg font-semibold text-white mb-4">Tracks in this Album</h4>
+    <ul class="space-y-2">
+      {% for track in album.music_tracks.all %}
+      <li
+        class="text-gray-300 flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-all"
+      >
+        <span>{{ track.title }} by {{ track.artist }}</span>
+        <form method="post" class="inline" action="{% url 'edit_album' album.album_id %}">
+          {% csrf_token %}
+          <input type="hidden" name="track_id" value="{{ track.music_id }}" />
+          <button
+            type="submit"
+            name="delete_track"
+            class="px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-md hover:from-red-700 hover:to-pink-700 transition-all"
+          >
+            Delete
+          </button>
+        </form>
+      </li>
+      {% empty %}
+      <li class="text-gray-400 p-3 bg-gray-700 rounded-lg">
+        No tracks available in this album.
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- Search and Select Script -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('search-tracks');
+    const tracksDropdown = document.getElementById('tracks-dropdown');
+    const selectedTrackIdsInput = document.getElementById('selected-track-ids');
+    const selectedTracksContainer = document.getElementById('selected-tracks');
+    const noTrackSelectedMessage = document.getElementById('no-track-selected');
+
+    let selectedTracks = [];
+
+    // Show dropdown when typing in the search input
+    searchInput.addEventListener('input', function () {
+      const searchTerm = this.value.toLowerCase();
+      const tracks = tracksDropdown.querySelectorAll('div');
+
+      tracks.forEach((track) => {
+        const text = track.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+          track.style.display = 'block';
+        } else {
+          track.style.display = 'none';
+        }
+      });
+
+      tracksDropdown.style.display = 'block';
+    });
+
+    // Select a track from the dropdown
+    tracksDropdown.addEventListener('click', function (e) {
+      if (e.target && e.target.nodeName === 'DIV') {
+        const trackId = e.target.getAttribute('data-value');
+        const trackText = e.target.textContent;
+
+        // Check if the track is already selected
+        if (!selectedTracks.includes(trackId)) {
+          selectedTracks.push(trackId);
+
+          // Update the hidden input with selected track IDs
+          selectedTrackIdsInput.value = selectedTracks.join(',');
+
+          // Add the selected track to the container
+          const selectedTrack = document.createElement('div');
+          selectedTrack.className = 'flex items-center justify-between p-2 bg-gray-600 rounded-md';
+          selectedTrack.setAttribute('data-track-id', trackId); // Add data attribute
+          selectedTrack.innerHTML = `
+            <span>${trackText}</span>
+            <button type="button" onclick="removeTrack('${trackId}')" class="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all">
+              Remove
+            </button>
+          `;
+          selectedTracksContainer.appendChild(selectedTrack);
+
+          // Hide the "No track selected" message
+          noTrackSelectedMessage.classList.add('hidden');
+        }
+
+        // Hide the dropdown
+        tracksDropdown.style.display = 'none';
+      }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function (e) {
+      if (
+        !tracksDropdown.contains(e.target) &&
+        e.target !== searchInput
+      ) {
+        tracksDropdown.style.display = 'none';
+      }
+    });
+  });
+
+  // Function to remove a selected track
+  window.removeTrack = function (trackId) {
+    const selectedTrackIdsInput = document.getElementById('selected-track-ids');
+    const selectedTracksContainer = document.getElementById('selected-tracks');
+    const noTrackSelectedMessage = document.getElementById('no-track-selected');
+
+    // Remove the track from the selected tracks array
+    selectedTracks = selectedTracks.filter((id) => id !== trackId);
+
+    // Update the hidden input with the remaining track IDs
+    selectedTrackIdsInput.value = selectedTracks.join(',');
+
+    // Remove the track from the selected tracks container
+    const trackElement = document.querySelector(`[data-track-id="${trackId}"]`);
+    if (trackElement) {
+      trackElement.remove();
+    }
+
+    // Show the "No track selected" message if no tracks are selected
+    if (selectedTracks.length === 0) {
+      noTrackSelectedMessage.classList.remove('hidden');
+    }
+  };
+
+  // Validate track selection before form submission
+  function validateTrackSelection() {
+    const selectedTrackIds = document.getElementById('selected-track-ids').value;
+    const noTrackSelectedMessage = document.getElementById('no-track-selected');
+
+    if (!selectedTrackIds) {
+      noTrackSelectedMessage.classList.remove('hidden');
+      return false; // Prevent form submission
+    }
+    return true; // Allow form submission
+  }
+</script>
+{% endblock %}

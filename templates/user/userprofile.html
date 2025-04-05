@@ -1,0 +1,178 @@
+{% extends 'user/index.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-purple-400 mb-8">Profile</h1>
+    
+    <!-- Messages Section -->
+    {% if messages %}
+    <div class="mb-8">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-500{% elif message.tags == 'error' %}bg-red-500{% else %}bg-blue-500{% endif %} text-white">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Profile Card -->
+    <div class="bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl mx-auto">
+        <div class="flex flex-col items-center space-y-6">
+            <!-- Profile Image -->
+            <div class="relative w-32 h-32 rounded-full overflow-hidden">
+                <img src="{{ user.profile_image }}" alt="Profile" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <label for="profileImageUpload" class="text-white cursor-pointer">
+                        <i class="fas fa-camera text-2xl"></i>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Form for Profile Image Upload -->
+            <form action="{% url 'update_profile_image' %}" method="POST" enctype="multipart/form-data" class="hidden">
+                {% csrf_token %}
+                <input type="file" id="profileImageUpload" name="profile_image" accept="image/*" onchange="this.form.submit()">
+            </form>
+
+            <!-- User Details -->
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-white">{{ user.name }}</h2>
+                <p class="text-gray-400">{{ user.email }}</p>
+            </div>
+
+            <!-- User Information Grid -->
+            <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-gray-400">Username</p>
+                    <p class="text-white font-semibold">{{ user.username }}</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-gray-400">Phone</p>
+                    <p class="text-white font-semibold">{{ user.phone }}</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-gray-400">Date of Birth</p>
+                    <p class="text-white font-semibold">{{ user.dob }}</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-gray-400">Location</p>
+                    <p class="text-white font-semibold">{{ user.city }}, {{ user.state }}, {{ user.country }}</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-gray-400">Pincode</p>
+                    <p class="text-white font-semibold">{{ user.pincode }}</p>
+                </div>
+            </div>
+
+            <!-- Edit Profile Button -->
+            <button onclick="openEditProfileModal()" class="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors duration-300">
+                <i class="fas fa-edit mr-2"></i>Edit Profile
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-75 backdrop-blur-md pt-16">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3 p-6 max-h-[60vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-purple-400">Edit Profile</h2>
+                <button onclick="closeEditProfileModal()" class="text-gray-400 hover:text-white transition-colors duration-300">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Edit Profile Form -->
+            <form action="{% url 'update_profile' %}" method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Column 1 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-white mb-2">Name</label>
+                            <input type="text" id="name" name="name" value="{{ user.name }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                        <div>
+                            <label for="email" class="block text-white mb-2">Email</label>
+                            <input type="email" id="email" name="email" value="{{ user.email }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                        <div>
+                            <label for="phone" class="block text-white mb-2">Phone</label>
+                            <input type="text" id="phone" name="phone" value="{{ user.phone }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                        <div>
+                            <label for="dob" class="block text-white mb-2">Date of Birth</label>
+                            <input type="date" id="dob" name="dob" value="{{ user.dob }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                    </div>
+
+                    <!-- Column 2 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label for="city" class="block text-white mb-2">City</label>
+                            <input type="text" id="city" name="city" value="{{ user.city }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                        <div>
+                            <label for="state" class="block text-white mb-2">State</label>
+                            <input type="text" id="state" name="state" value="{{ user.state }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                        <div>
+                            <label for="country" class="block text-white mb-2">Country</label>
+                            <input type="text" id="country" name="country" value="{{ user.country }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                        <div>
+                            <label for="pincode" class="block text-white mb-2">Pincode</label>
+                            <input type="text" id="pincode" name="pincode" value="{{ user.pincode }}" class="w-full p-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Changes Button -->
+                <div class="mt-6">
+                    <button type="submit" class="w-full bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors duration-300">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for Icons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+<script>
+    // Function to handle profile image upload
+    const profileImageUpload = document.getElementById('profileImageUpload');
+    const profileImageForm = document.querySelector('form');
+
+    profileImageUpload.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const profileImage = document.querySelector('.relative img');
+                profileImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            profileImageForm.submit(); // Automatically submit the form
+        }
+    });
+
+    // Function to open the edit profile modal
+    function openEditProfileModal() {
+        const modal = document.getElementById('editProfileModal');
+        modal.classList.remove('hidden');
+    }
+
+    // Function to close the edit profile modal
+    function closeEditProfileModal() {
+        const modal = document.getElementById('editProfileModal');
+        modal.classList.add('hidden');
+    }
+</script>
+{% endblock %}

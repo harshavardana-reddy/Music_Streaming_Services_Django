@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.bak
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+
+# Django stuff:
+*.log
+*.pot
+*.pyc
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+
+# Ignore all files in media subfolders
+media/music_files/*
+media/music_images/*
+media/profile_images/*
+
+# But keep the folders themselves
+!media/music_files/.gitkeep
+!media/music_images/.gitkeep
+!media/profile_images/.gitkeep
+
+
+# If you're using a PostgreSQL or MySQL dump file
+*.sql
+
+# Ignore migrations (optional)
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# Environment
+.env
+*.env
+.venv/
+venv/
+ENV/
+env.bak/
+env/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini

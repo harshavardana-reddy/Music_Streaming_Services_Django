@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Music Streaming{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Custom CSS -->
+    <style>
+        .nav-item {
+            position: relative;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(192, 132, 252, 1) 0%, rgba(168, 85, 247, 1) 100%);
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: width 0.3s ease;
+        }
+        .nav-item:hover::after {
+            width: 100%;
+        }
+        .nav-item:hover {
+            color: #c084fc;
+            transform: translateY(-3px);
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Three.js Background Animation -->
+    <div id="threejs-background" class="fixed inset-0 z-0"></div>
+
+    <!-- Main Layout -->
+    <div class="flex flex-col min-h-screen">
+        <!-- Horizontal Navbar -->
+        <nav id="navbar" class="w-full bg-gray-800 bg-opacity-75 backdrop-blur-md p-4 fixed top-0 z-40">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-purple-400">Music User</h1>
+                <ul class="flex space-x-6">
+                    <li><a href="{% url 'user_dashboard' %}" class="nav-item text-white hover:text-purple-400">Home</a></li>
+                    <li><a href="{% url 'albums' %}" class="nav-item text-white hover:text-purple-400">Albums</a></li>
+                    <li><a href="{% url 'musics' %}" class="nav-item text-white hover:text-purple-400">Musics</a></li>
+                    <li><a href="{% url 'view_playlists' %}" class="nav-item text-white hover:text-purple-400">My Playlists</a></li>
+                    <li><a href="{% url 'usermusicplayer' %}" class="nav-item text-white hover:text-purple-400">Player</a></li>
+                    <li><a href="{% url 'userprofile' %}" class="nav-item text-white hover:text-purple-400">Profile</a></li>
+                    <li><a href="{% url 'userlogout' %}" class="nav-item text-white hover:text-purple-400">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Content Block -->
+        <main class="flex-1 p-8 z-10 mt-16">
+            {% block content %}
+            <!-- Default content can go here -->
+            <h2 class="text-3xl font-bold mb-6">Welcome , {{user.name}}</h2>
+            {% endblock %}
+        </main>
+    </div>
+
+    <!-- GSAP Animations -->
+    <script>
+        gsap.from(".nav-item", {
+            duration: 1,
+            opacity: 0,
+            y: -20,
+            stagger: 0.2,
+            ease: "power3.out",
+        });
+    </script>
+
+    <!-- Three.js Background -->
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('threejs-background').appendChild(renderer.domElement);
+
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        camera.position.z = 5;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

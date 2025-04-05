@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Streaming Service - Registration</title>
+    <!-- Tailwind CSS CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <!-- Custom CSS for animations -->
+    <style>
+      .card {
+        transform-style: preserve-3d;
+        transform: perspective(1000px);
+      }
+      .card:hover {
+        transform: perspective(1000px) rotateY(10deg) rotateX(10deg);
+        transition: transform 0.5s ease;
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+      .floating {
+        animation: float 4s ease-in-out infinite;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-white">
+    <!-- Background Animation -->
+    <div class="absolute inset-0 overflow-hidden">
+      <div
+        class="floating w-20 h-20 bg-purple-500 rounded-full absolute top-1/4 left-1/4 opacity-50"
+      ></div>
+      <div
+        class="floating w-32 h-32 bg-blue-500 rounded-full absolute top-1/2 right-1/4 opacity-50"
+      ></div>
+      <div
+        class="floating w-24 h-24 bg-pink-500 rounded-full absolute bottom-1/4 left-1/2 opacity-50"
+      ></div>
+    </div>
+
+    <!-- Registration Card -->
+    <div class="min-h-screen flex items-center justify-center">
+      <div
+        class="card bg-gray-800 bg-opacity-75 backdrop-blur-md rounded-lg shadow-2xl p-8 w-full max-w-2xl transform transition-transform duration-500 hover:shadow-purple-500/50"
+      >
+        <h2
+          class="text-3xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600"
+        >
+          Join the Beat
+        </h2>
+        {% if messages %}
+          <div class="mb-4">
+            {% for message in messages %}
+              <div class="p-3 rounded-lg text-center 
+                {% if message.tags == 'success' %} bg-green-500 text-white
+                {% elif message.tags == 'error' %} bg-red-500 text-white
+                {% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <form method="post">
+          {% csrf_token %}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Column 1 -->
+            <div class="space-y-4">
+              <input
+                type="text"
+                name="username"
+                placeholder="Username"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="text"
+                name="name"
+                placeholder="Name"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="text"
+                name="phone"
+                placeholder="Phone"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+
+            <!-- Column 2 -->
+            <div class="space-y-4">
+              <input
+                type="text"
+                name="city"
+                placeholder="City"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="text"
+                name="state"
+                placeholder="State"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="text"
+                name="pincode"
+                placeholder="Pin-Code"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="text"
+                name="country"
+                placeholder="Country"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <input
+                type="date"
+                name="dob"
+                placeholder="Date of Birth"
+                class="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            class="w-full mt-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-500 transition-all duration-300"
+          >
+            Sign Up
+          </button>
+        </form>
+        <p class="text-center mt-4 text-gray-400">
+          Already have an account?
+          <a href="/login" class="text-purple-400 hover:text-pink-500">Log In</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- GSAP Animations -->
+    <script>
+      gsap.from(".card", {
+        duration: 1.5,
+        opacity: 0,
+        y: 50,
+        ease: "power3.out",
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      // Three.js 3D Scene
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({ alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const geometry = new THREE.BoxGeometry();
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        wireframe: true,
+      });
+      const cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
+
+      camera.position.z = 5;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        renderer.render(scene, camera);
+      }
+      animate();
+    </script>
+  </body>
+</html>
